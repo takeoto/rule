@@ -1,0 +1,22 @@
+{
+    "name": "takeoto/rule",
+    "description": "Abstraction for data validation rules.",
+    "type": "library",
+    "keywords": ["takeoto", "validation", "rule", "abstraction", "php"],
+    "license": "MIT",
+    "homepage": "https://github.com/takeoto",
+    "authors": [
+        {
+            "name": "Vladysalv Vernyhora",
+            "homepage": "vladyslav.vernyhora@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Takeoto\\Rule\\": "src/"
+        }
+    }
+}
