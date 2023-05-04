@@ -7,8 +7,6 @@ namespace Takeoto\Rule\Claim\Type;
 use Takeoto\Rule\Contract\ClaimInterface;
 use Takeoto\Rule\Claim\AbstractClaim;
 use Takeoto\Rule\Dictionary\ClaimDict;
-use Takeoto\Solver\ArraySolver;
-use Takeoto\Solver\FnSolver;
 
 final class ArrayClaim extends AbstractClaim
 {
@@ -17,18 +15,12 @@ final class ArrayClaim extends AbstractClaim
         $this
             ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_ARRAY)
             ->attrReadOnly(ClaimDict::TYPE)
-            ->attrRule(ClaimDict::TYPE_ARRAY_STRUCTURE, is_array(...))
-            ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_EXTRA_FIELDS, is_bool(...))
-            ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_MISSING_FIELDS, is_bool(...))
+            ->attrRule(ClaimDict::TYPE_ARRAY_STRUCTURE, \Closure::fromCallable('is_array'))
+            ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_EXTRA_FIELDS, \Closure::fromCallable('is_bool'))
+            ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_MISSING_FIELDS, \Closure::fromCallable('is_bool'))
             ->attrRule(ClaimDict::TYPE_ARRAY_EACH, static fn(mixed $v): bool => $v instanceof ClaimInterface)
-            ->attrRule(
-                ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD,
-                static fn(mixed $v): bool => is_array($v) && ArraySolver::allAre($v, is_string(...)),
-            )
-            ->attrRule(
-                ClaimDict::TYPE_ARRAY_REQUIRED_FIELD,
-                static fn(mixed $v): bool => is_array($v) && ArraySolver::allAre($v, is_string(...))
-            );
+            ->attrRule(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD, \Closure::fromCallable([$this, 'areKeysValid']))
+            ->attrRule(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD, \Closure::fromCallable([$this, 'areKeysValid']));
     }
 
     /**
@@ -68,12 +60,15 @@ final class ArrayClaim extends AbstractClaim
     /**
      * @param string|string[] $keys
      * @return $this
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function optional(string|array $keys): self
     {
         if (is_string($keys) && $this->hasAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD)) {
-            $keys = array_unique(array_merge((array)$this->getAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD), (array)$keys));
+            $keys = array_unique(array_merge(
+                (array)$this->getAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD),
+                (array)$keys),
+            );
         }
 
         $this->setAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD, (array)$keys);
@@ -84,12 +79,15 @@ final class ArrayClaim extends AbstractClaim
     /**
      * @param string|string[] $keys
      * @return $this
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function required(string|array $keys): self
     {
         if (is_string($keys) && $this->hasAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD)) {
-            $keys = array_unique(array_merge((array)$this->getAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD), (array)$keys));
+            $keys = array_unique(array_merge(
+                (array)$this->getAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD),
+                (array)$keys,
+            ));
         }
 
         $this->setAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD, (array)$keys);
@@ -97,44 +95,18 @@ final class ArrayClaim extends AbstractClaim
         return $this;
     }
 
-    public function undefined()
+    private function areKeysValid(mixed $value): bool
     {
+        if (!is_array($value)) {
+            return false;
+        }
 
+        foreach ($value as $item) {
+            if (!is_string($item) || empty($item)) {
+                return false;
+            }
+        }
+
+        return true;
     }
-# need improve [attributes schema]
-//    protected function attrs(): array
-//    {
-//        $attrs = new AttributesDescriber();
-//        $attrs
-//            ->define(RuleDict::TYPE)
-//                ->default(RuleDict::TYPE_ARRAY)
-//                ->demand(Demand::string())
-//                ->required()
-//                ->permission()
-//            ->also()
-//            ->define(RuleDict::TYPE)
-//                ->demand(Demand::string())
-//        ;
-//
-//        $attributes = $attrs->resolve($values);
-//        $attributes = $attrs->createBuilder()->build($values);
-//
-//        $attributes->set();
-//        $attributes->get();
-//        $attributes->has();
-//        $attributes->toArray();
-//
-//        $attributes->need();
-//        $attributes->demands(RuleDict::TYPE);
-//        $attributes->vrifier(RuleDict::TYPE)->verify($value)->isOk();
-//
-//
-//        return [
-//            RuleDict::TYPE => RuleDict::TYPE_ARRAY,
-//            RuleDict::TYPE_ARRAY_OPTIONAL_FIELD => Demand::array(Demand::string()),
-//            RuleDict::TYPE_ARRAY_ALLOWED_MISSING_FIELDS,
-//            RuleDict::TYPE_ARRAY_ALLOWED_EXTRA_FIELDS,
-//            RuleDict::TYPE_ARRAY_FIELDS,
-//        ];
-//    }
 }

@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Takeoto\Rule\Utility;
 
+use Takeoto\Rule\Claim\CallbackClaim;
+use Takeoto\Rule\Claim\OneOfClaim;
 use Takeoto\Rule\Claim\Type\ArrayClaim;
 use Takeoto\Rule\Claim\Type\IntClaim;
 use Takeoto\Rule\Claim\Type\ObjectClaim;
 use Takeoto\Rule\Claim\Type\StringClaim;
 use Takeoto\Rule\Contract\ClaimInterface;
-use Takeoto\Rule\Dictionary\ClaimDict;
 
-final class Claim
+final class ClaimUtility
 {
     /**
      * @param array<string,ClaimInterface>|ClaimInterface|null $structureOrRule
@@ -43,21 +44,6 @@ final class Claim
     public static function string(): StringClaim
     {
         return new StringClaim();
-    }
-
-    public static function email(): StringClaim
-    {
-        return (new StringClaim())->pattern(ClaimDict::TYPE_STRING_PATTERN_EMAIL);
-    }
-
-    public static function json(): StringClaim
-    {
-        return (new StringClaim())->pattern(ClaimDict::TYPE_STRING_PATTERN_JSON);
-    }
-
-    public static function instanceOf(string $class): ObjectClaim
-    {
-        return (new ObjectClaim())->instanceOf($class);
     }
 
     public static function oneOf(mixed ...$values): OneOfClaim

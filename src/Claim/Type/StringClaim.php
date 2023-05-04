@@ -25,14 +25,14 @@ class StringClaim extends AbstractClaim
 
     public function min(int $minLength): self
     {
-        $this->setAttr(ClaimDict::TYPE_STRING_MIN, $minLength);
+        $this->setAttr(ClaimDict::TYPE_STRING_LENGTH_MIN, $minLength);
 
         return $this;
     }
 
     public function max(int $maxLength): self
     {
-        $this->setAttr(ClaimDict::TYPE_STRING_MAX, $maxLength);
+        $this->setAttr(ClaimDict::TYPE_STRING_LENGTH_MAX, $maxLength);
 
         return $this;
     }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Takeoto\Rule\Claim;
 
-use Takeoto\Attributable\Contract\WritableAttributesInterface;
 use Takeoto\Rule\Contract\ClaimInterface;
+use Takeoto\Rule\Dictionary\ClaimDict;
 
-abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterface
+abstract class AbstractClaim implements ClaimInterface
 {
     /**
      * @var array<string,mixed>
@@ -29,7 +29,7 @@ abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterf
      */
     public function getType(): string
     {
-        return Strict::string($this->getAttr(ClaimDict::TYPE));
+        return (string)$this->getAttr(ClaimDict::TYPE);
     }
 
     public function getAttr(string $name): mixed
@@ -51,7 +51,7 @@ abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterf
         return $this->attributes;
     }
 
-    public function setAttr(string $name, mixed $value): static
+    protected function setAttr(string $name, mixed $value): static
     {
         $this->ensureWritable($name);
         $this->ensureValid($name, $value);
@@ -60,10 +60,23 @@ abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterf
         return $this;
     }
 
-    public function unsetAttr(string $name): void
+    protected function unsetAttr(string $name): void
     {
         $this->ensureWritable($name);
         unset($this->attributes[$name]);
+    }
+
+    public function setErrorMessage(string|int $errorCode, string $message): static
+    {
+        $messages = [$errorCode => $message];
+        $this->setAttr(
+            ClaimDict::ERROR_MESSAGE,
+            $this->hasAttr(ClaimDict::ERROR_MESSAGE)
+                ? $messages + $this->getAttr(ClaimDict::ERROR_MESSAGE)
+                : $messages
+        );
+
+        return $this;
     }
 
     /**
@@ -73,7 +86,9 @@ abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterf
      */
     protected function ensureValid(string $name, mixed $value): void
     {
-        Ensure::true($this->getAttrRule($name)($value), 'The "%s" attribute value isn\'t valid.');
+        if (!$this->getAttrRule($name)($value)) {
+            throw new \InvalidArgumentException(sprintf('The "%s" attribute value isn\'t valid.', $name));
+        }
     }
 
     protected function attrReadOnly(string $attrName, bool $enabled = true): static
@@ -87,13 +102,11 @@ abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterf
         return $this;
     }
 
-    /**
-     * @param string $name
-     * @return void
-     */
     protected function ensureWritable(string $name): void
     {
-        Ensure::keyNotExists($this->attributesReadOnly, $name, sprintf('The "%s" attribute is readonly.', $name));
+        if (!isset($this->attributesReadOnly[$name])) {
+            throw new \RuntimeException(sprintf('The "%s" attribute is readonly.', $name));
+        }
     }
 
     protected function attrRule(string $attrName, \Closure $rule): static
@@ -105,6 +118,6 @@ abstract class AbstractClaim implements ClaimInterface, WritableAttributesInterf
 
     protected function getAttrRule(string $name): \Closure
     {
-        return $this->attributesRules[$name] ?? fn(mixed $value): bool => true;
+        return $this->attributesRules[$name] ?? static fn(mixed $value): bool => true;
     }
 }

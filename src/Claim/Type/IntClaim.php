@@ -14,9 +14,9 @@ class IntClaim extends AbstractClaim
         $this
             ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_INT)
             ->attrReadOnly(ClaimDict::TYPE)
-            ->attrRule(ClaimDict::TYPE_INT_SOFT, is_bool(...))
-            ->attrRule(ClaimDict::TYPE_INT_MIN, is_int(...))
-            ->attrRule(ClaimDict::TYPE_INT_MAX, is_int(...))
+            ->attrRule(ClaimDict::TYPE_INT_SOFT, \Closure::fromCallable('is_bool'))
+            ->attrRule(ClaimDict::TYPE_INT_MIN, \Closure::fromCallable('is_int'))
+            ->attrRule(ClaimDict::TYPE_INT_MAX, \Closure::fromCallable('is_int'))
         ;
     }
 
