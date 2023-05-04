@@ -4,5 +4,5 @@ namespace Takeoto\Rule\Contract;
 
 interface RuleBuilderInterface
 {
-    public function build(ClaimInterface|array $raw): RuleInterface;
+    public function build(ClaimInterface $claim): RuleInterface;
 }

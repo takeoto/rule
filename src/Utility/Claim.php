@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Takeoto\Rule\Claim;
+namespace Takeoto\Rule\Utility;
 
 use Takeoto\Rule\Claim\Type\ArrayClaim;
 use Takeoto\Rule\Claim\Type\IntClaim;
@@ -55,7 +55,7 @@ final class Claim
         return (new StringClaim())->pattern(ClaimDict::TYPE_STRING_PATTERN_JSON);
     }
 
-    public static function instaceOf(string $class): ObjectClaim
+    public static function instanceOf(string $class): ObjectClaim
     {
         return (new ObjectClaim())->instanceOf($class);
     }

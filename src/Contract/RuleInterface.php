@@ -13,5 +13,5 @@ interface RuleInterface
      *
      * @param mixed $value
      */
-    public function verify($value): StateInterface;
+    public function verify(mixed $value): StateInterface;
 }
