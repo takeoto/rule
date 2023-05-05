@@ -12,8 +12,20 @@ class TypeClaim extends AbstractClaim
     public function __construct(string $type)
     {
         $this
-            ->attrRule(ClaimDict::TYPE, \Closure::fromCallable('is_string'))
             ->setAttr(ClaimDict::TYPE, $type)
-            ->attrReadOnly(ClaimDict::TYPE);
+            ->attrRule(ClaimDict::TYPE, \Closure::fromCallable('is_string'));
+    }
+
+    public function setAttr(string $name, mixed $value): static
+    {
+        $this->ensureValid($name, $value);
+        $this->attributes[$name] = $value;
+
+        return $this;
+    }
+
+    public function unsetAttr(string $name): void
+    {
+        unset($this->attributes[$name]);
     }
 }

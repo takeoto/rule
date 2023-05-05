@@ -11,9 +11,7 @@ class StringClaim extends AbstractClaim
 {
     public function __construct()
     {
-        $this
-            ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_STRING)
-            ->attrReadOnly(ClaimDict::TYPE);
+        $this->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_STRING);
     }
 
     public function pattern(string $pattern): self

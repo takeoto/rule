@@ -13,7 +13,6 @@ class ObjectClaim extends AbstractClaim
     {
         $this
             ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_OBJECT)
-            ->attrReadOnly(ClaimDict::TYPE)
             ->attrRule(ClaimDict::TYPE_OBJECT_INSTANCE, static fn(mixed $v): bool => is_string($v) && class_exists($v))
         ;
     }

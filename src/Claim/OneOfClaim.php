@@ -10,9 +10,7 @@ class OneOfClaim extends AbstractClaim
 {
     public function __construct()
     {
-        $this
-            ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_ONE_OF)
-            ->attrReadOnly(ClaimDict::TYPE);
+        $this->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_ONE_OF);
     }
 
     /**

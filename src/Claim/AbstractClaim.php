@@ -12,17 +12,12 @@ abstract class AbstractClaim implements ClaimInterface
     /**
      * @var array<string,mixed>
      */
-    private array $attributes;
+    protected array $attributes;
 
     /**
      * @var array<string,\Closure>
      */
     private array $attributesRules = [];
-
-    /**
-     * @var array<string,string>
-     */
-    private array $attributesReadOnly = [];
 
     /**
      * @throws \Throwable
@@ -53,7 +48,6 @@ abstract class AbstractClaim implements ClaimInterface
 
     protected function setAttr(string $name, mixed $value): static
     {
-        $this->ensureWritable($name);
         $this->ensureValid($name, $value);
         $this->attributes[$name] = $value;
 
@@ -62,7 +56,6 @@ abstract class AbstractClaim implements ClaimInterface
 
     protected function unsetAttr(string $name): void
     {
-        $this->ensureWritable($name);
         unset($this->attributes[$name]);
     }
 
@@ -88,24 +81,6 @@ abstract class AbstractClaim implements ClaimInterface
     {
         if (!$this->getAttrRule($name)($value)) {
             throw new \InvalidArgumentException(sprintf('The "%s" attribute value isn\'t valid.', $name));
-        }
-    }
-
-    protected function attrReadOnly(string $attrName, bool $enabled = true): static
-    {
-        if ($enabled) {
-            $this->attributesReadOnly[$attrName] = $attrName;
-        } else {
-            unset($this->attributesReadOnly[$attrName]);
-        }
-
-        return $this;
-    }
-
-    protected function ensureWritable(string $name): void
-    {
-        if (!isset($this->attributesReadOnly[$name])) {
-            throw new \RuntimeException(sprintf('The "%s" attribute is readonly.', $name));
         }
     }
 

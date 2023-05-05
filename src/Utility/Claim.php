@@ -10,9 +10,11 @@ use Takeoto\Rule\Claim\Type\ArrayClaim;
 use Takeoto\Rule\Claim\Type\IntClaim;
 use Takeoto\Rule\Claim\Type\ObjectClaim;
 use Takeoto\Rule\Claim\Type\StringClaim;
+use Takeoto\Rule\Claim\Type\TypeClaim;
 use Takeoto\Rule\Contract\ClaimInterface;
+use Takeoto\Rule\Dictionary\ClaimDict;
 
-final class ClaimUtility
+final class Claim
 {
     /**
      * @param array<string,ClaimInterface>|ClaimInterface|null $structureOrRule
@@ -39,6 +41,11 @@ final class ClaimUtility
     public static function int(): IntClaim
     {
         return new IntClaim();
+    }
+
+    public static function bool(): TypeClaim
+    {
+        return new TypeClaim(ClaimDict::TYPE_BOOL);
     }
 
     public static function string(): StringClaim

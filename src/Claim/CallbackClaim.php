@@ -13,8 +13,6 @@ class CallbackClaim extends AbstractClaim
         $this
             ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_CALLBACK)
             ->setAttr(ClaimDict::TYPE_CALLBACK_CLOSURE, $closure)
-            ->attrReadOnly(ClaimDict::TYPE)
-            ->attrReadOnly(ClaimDict::TYPE_CALLBACK_CLOSURE)
         ;
     }
 }

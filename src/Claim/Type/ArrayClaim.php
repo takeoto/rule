@@ -14,7 +14,6 @@ final class ArrayClaim extends AbstractClaim
     {
         $this
             ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_ARRAY)
-            ->attrReadOnly(ClaimDict::TYPE)
             ->attrRule(ClaimDict::TYPE_ARRAY_STRUCTURE, \Closure::fromCallable('is_array'))
             ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_EXTRA_FIELDS, \Closure::fromCallable('is_bool'))
             ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_MISSING_FIELDS, \Closure::fromCallable('is_bool'))
@@ -64,14 +63,12 @@ final class ArrayClaim extends AbstractClaim
      */
     public function optional(string|array $keys): self
     {
-        if (is_string($keys) && $this->hasAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD)) {
-            $keys = array_unique(array_merge(
-                (array)$this->getAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD),
-                (array)$keys),
-            );
-        }
-
-        $this->setAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD, (array)$keys);
+        $keys = (array)$keys;
+        $keys = array_combine($keys, $keys);
+        $previous = $this->hasAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD)
+            ? (array)$this->getAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD)
+            : [];
+        $this->setAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD, $keys + $previous);
 
         return $this;
     }
@@ -83,14 +80,12 @@ final class ArrayClaim extends AbstractClaim
      */
     public function required(string|array $keys): self
     {
-        if (is_string($keys) && $this->hasAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD)) {
-            $keys = array_unique(array_merge(
-                (array)$this->getAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD),
-                (array)$keys,
-            ));
-        }
-
-        $this->setAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD, (array)$keys);
+        $keys = (array)$keys;
+        $keys = array_combine($keys, $keys);
+        $previous = $this->hasAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD)
+            ? (array)$this->getAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD)
+            : [];
+        $this->setAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD, $keys + $previous);
 
         return $this;
     }
