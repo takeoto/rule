@@ -15,6 +15,6 @@ class RAWClaim extends AbstractClaim
     public function __construct(string $type, array $attributes)
     {
         array_walk($attributes, fn(mixed $v, $k) => $this->setAttr($k, $v));
-        $this->setAttr(ClaimDict::TYPE, $type);
+        $this->setAttr(ClaimDict::CLAIM_TYPE, $type);
     }
 }

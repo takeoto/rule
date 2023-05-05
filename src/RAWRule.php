@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Takeoto\Rule;
 
-use Takeoto\Message\Contract\ErrorMessageInterface;
 use Takeoto\Message\Contract\MessageInterface;
 use Takeoto\Message\ErrorMessage;
 use Takeoto\Rule\Contract\RuleInterface;
@@ -13,61 +12,56 @@ use Takeoto\State\State;
 
 class RAWRule implements RuleInterface
 {
-    private \Closure $verifyClosure;
+    private \Closure $verifier;
 
-    public function __construct(\Closure $verifyClosure)
+    /**
+     * @param \Closure(mixed $v):StateInterface|MessageInterface|array<string|MessageInterface>|string|bool $verifier
+     */
+    public function __construct(\Closure $verifier)
     {
-        $this->verifyClosure = $verifyClosure;
+        $this->verifier = $verifier;
     }
 
-    public static function new(\Closure $verifyClosure)
+    /**
+     * @param \Closure(mixed $v):StateInterface|MessageInterface|array<string|MessageInterface>|string|bool $verifier
+     */
+    public static function new(\Closure $verifier)
     {
-        return new self($verifyClosure);
+        return new self($verifier);
     }
 
     /**
      * @inheritDoc
      */
-    public function verify($value): StateInterface
+    public function verify(mixed $value): StateInterface
     {
-        $result = $this->verifyClosure->__invoke($value);
+        $state = ($this->verifier)($value);
 
-        if ($result instanceof StateInterface) {
-            return $result;
+        if ($state instanceof StateInterface) {
+            return $state;
         }
 
-        $errors = [];
-        $isPassed = null;
-
-        switch (true) {
-            case is_bool($result):
-                $isPassed = $result;
-                break;
-            case is_array($result):
-                $errors = array_map([$this, 'toMessage'], $result);
-                break;
-            default:
-                $errors = [$this->toMessage($result)];
-        }
-
-        return new State($errors, $isPassed);
+        return new State(is_array($state) ? array_map([$this, 'toMessage'], $state) : (array)$this->toMessage($state));
     }
 
     /**
      * @param mixed $message
-     * @return MessageInterface
+     * @return MessageInterface|null
      */
-    private function toMessage($message): MessageInterface
+    private function toMessage(mixed $message): ?MessageInterface
     {
         switch (true) {
+            case is_bool($message):
+                return $message ? new ErrorMessage(
+                    $this->verifier::class . '__verification_error',
+                    'Value is not verified.'
+                ) : null;
             case is_string($message):
-                return new ErrorMessage($this->verifyClosure::class . '__verification_error', $message);
+                return new ErrorMessage($this->verifier::class . '__verification_error', $message);
             case $message instanceof MessageInterface:
                 return $message;
             default:
-                throw new \RuntimeException(
-                    'The result of a verify closure cannot be transformed to the state.'
-                );
+                throw new \RuntimeException('The result of a verify closure cannot be transformed to the state.');
         }
     }
 }

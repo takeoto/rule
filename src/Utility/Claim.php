@@ -45,7 +45,7 @@ final class Claim
 
     public static function bool(): TypeClaim
     {
-        return new TypeClaim(ClaimDict::TYPE_BOOL);
+        return new TypeClaim(ClaimDict::BOOL);
     }
 
     public static function string(): StringClaim

@@ -24,7 +24,7 @@ abstract class AbstractClaim implements ClaimInterface
      */
     public function getType(): string
     {
-        return (string)$this->getAttr(ClaimDict::TYPE);
+        return (string)$this->getAttr(ClaimDict::CLAIM_TYPE);
     }
 
     public function getAttr(string $name): mixed
@@ -63,9 +63,9 @@ abstract class AbstractClaim implements ClaimInterface
     {
         $messages = [$errorCode => $message];
         $this->setAttr(
-            ClaimDict::ERROR_MESSAGE,
-            $this->hasAttr(ClaimDict::ERROR_MESSAGE)
-                ? $messages + $this->getAttr(ClaimDict::ERROR_MESSAGE)
+            ClaimDict::CLAIM_ERROR_MESSAGE,
+            $this->hasAttr(ClaimDict::CLAIM_ERROR_MESSAGE)
+                ? $messages + $this->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE)
                 : $messages
         );
 

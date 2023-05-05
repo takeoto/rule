@@ -12,16 +12,16 @@ class ObjectClaim extends AbstractClaim
     public function __construct()
     {
         $this
-            ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_OBJECT)
-            ->attrRule(ClaimDict::TYPE_OBJECT_INSTANCE, static fn(mixed $v): bool => is_string($v) && class_exists($v))
+            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::OBJECT)
+            ->attrRule(ClaimDict::OBJECT_INSTANCE, \Closure::fromCallable('class_exists'))
         ;
     }
 
     public function instanceOf(?string $class = null): self
     {
         null === $class
-            ? $this->unsetAttr(ClaimDict::TYPE_OBJECT_INSTANCE)
-            : $this->setAttr(ClaimDict::TYPE_OBJECT_INSTANCE, $class);
+            ? $this->unsetAttr(ClaimDict::OBJECT_INSTANCE)
+            : $this->setAttr(ClaimDict::OBJECT_INSTANCE, $class);
 
         return $this;
     }

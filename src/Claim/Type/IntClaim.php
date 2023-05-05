@@ -9,33 +9,28 @@ use Takeoto\Rule\Dictionary\ClaimDict;
 
 class IntClaim extends AbstractClaim
 {
-    public function __construct()
+    public function getType(): string
     {
-        $this
-            ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_INT)
-            ->attrRule(ClaimDict::TYPE_INT_SOFT, \Closure::fromCallable('is_bool'))
-            ->attrRule(ClaimDict::TYPE_INT_MIN, \Closure::fromCallable('is_int'))
-            ->attrRule(ClaimDict::TYPE_INT_MAX, \Closure::fromCallable('is_int'))
-        ;
+        return ClaimDict::INT;
     }
 
     public function soft(bool $enable = true): self
     {
-        $this->setAttr(ClaimDict::TYPE_INT_SOFT, $enable);
+        $this->setAttr(ClaimDict::INT_SOFT, $enable);
 
         return $this;
     }
 
     public function min(int $minLength): self
     {
-        $this->setAttr(ClaimDict::TYPE_INT_MIN, $minLength);
+        $this->setAttr(ClaimDict::INT_MIN, $minLength);
 
         return $this;
     }
 
     public function max(int $maxLength): self
     {
-        $this->setAttr(ClaimDict::TYPE_INT_MAX, $maxLength);
+        $this->setAttr(ClaimDict::INT_MAX, $maxLength);
 
         return $this;
     }

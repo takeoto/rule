@@ -10,7 +10,7 @@ class OneOfClaim extends AbstractClaim
 {
     public function __construct()
     {
-        $this->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_ONE_OF);
+        $this->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ONE_OF);
     }
 
     /**
@@ -19,7 +19,7 @@ class OneOfClaim extends AbstractClaim
      */
     public function items(array $items): self
     {
-        $this->setAttr(ClaimDict::TYPE_ONE_OF_ITEMS, $items);
+        $this->setAttr(ClaimDict::ONE_OF_ITEMS, $items);
 
         return $this;
     }

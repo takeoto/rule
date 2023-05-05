@@ -13,13 +13,10 @@ final class ArrayClaim extends AbstractClaim
     public function __construct()
     {
         $this
-            ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_ARRAY)
-            ->attrRule(ClaimDict::TYPE_ARRAY_STRUCTURE, \Closure::fromCallable('is_array'))
-            ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_EXTRA_FIELDS, \Closure::fromCallable('is_bool'))
-            ->attrRule(ClaimDict::TYPE_ARRAY_ALLOWED_MISSING_FIELDS, \Closure::fromCallable('is_bool'))
-            ->attrRule(ClaimDict::TYPE_ARRAY_EACH, static fn(mixed $v): bool => $v instanceof ClaimInterface)
-            ->attrRule(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD, \Closure::fromCallable([$this, 'areKeysValid']))
-            ->attrRule(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD, \Closure::fromCallable([$this, 'areKeysValid']));
+            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ARRAY)
+            ->attrRule(ClaimDict::ARRAY_STRUCTURE, \Closure::fromCallable('is_array'))
+            ->attrRule(ClaimDict::ARRAY_OPTIONAL_FIELD, \Closure::fromCallable([$this, 'areKeysValid']))
+            ->attrRule(ClaimDict::ARRAY_REQUIRED_FIELD, \Closure::fromCallable([$this, 'areKeysValid']));
     }
 
     /**
@@ -29,29 +26,29 @@ final class ArrayClaim extends AbstractClaim
     public function structure(?array $structure = null): self
     {
         null === $structure
-            ? $this->unsetAttr(ClaimDict::TYPE_ARRAY_STRUCTURE)
-            : $this->setAttr(ClaimDict::TYPE_ARRAY_STRUCTURE, $structure);
+            ? $this->unsetAttr(ClaimDict::ARRAY_STRUCTURE)
+            : $this->setAttr(ClaimDict::ARRAY_STRUCTURE, $structure);
 
         return $this;
     }
 
     public function extraFields(bool $allowed = true): self
     {
-        $this->setAttr(ClaimDict::TYPE_ARRAY_ALLOWED_EXTRA_FIELDS, $allowed);
+        $this->setAttr(ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS, $allowed);
 
         return $this;
     }
 
     public function missingFields(bool $allowed = true): self
     {
-        $this->setAttr(ClaimDict::TYPE_ARRAY_ALLOWED_MISSING_FIELDS, $allowed);
+        $this->setAttr(ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS, $allowed);
 
         return $this;
     }
 
     public function each(ClaimInterface $demand): self
     {
-        $this->setAttr(ClaimDict::TYPE_ARRAY_EACH, $demand);
+        $this->setAttr(ClaimDict::ARRAY_EACH, $demand);
 
         return $this;
     }
@@ -65,10 +62,10 @@ final class ArrayClaim extends AbstractClaim
     {
         $keys = (array)$keys;
         $keys = array_combine($keys, $keys);
-        $previous = $this->hasAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD)
-            ? (array)$this->getAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD)
+        $previous = $this->hasAttr(ClaimDict::ARRAY_OPTIONAL_FIELD)
+            ? (array)$this->getAttr(ClaimDict::ARRAY_OPTIONAL_FIELD)
             : [];
-        $this->setAttr(ClaimDict::TYPE_ARRAY_OPTIONAL_FIELD, $keys + $previous);
+        $this->setAttr(ClaimDict::ARRAY_OPTIONAL_FIELD, $keys + $previous);
 
         return $this;
     }
@@ -82,10 +79,10 @@ final class ArrayClaim extends AbstractClaim
     {
         $keys = (array)$keys;
         $keys = array_combine($keys, $keys);
-        $previous = $this->hasAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD)
-            ? (array)$this->getAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD)
+        $previous = $this->hasAttr(ClaimDict::ARRAY_REQUIRED_FIELD)
+            ? (array)$this->getAttr(ClaimDict::ARRAY_REQUIRED_FIELD)
             : [];
-        $this->setAttr(ClaimDict::TYPE_ARRAY_REQUIRED_FIELD, $keys + $previous);
+        $this->setAttr(ClaimDict::ARRAY_REQUIRED_FIELD, $keys + $previous);
 
         return $this;
     }

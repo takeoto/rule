@@ -11,8 +11,8 @@ class CallbackClaim extends AbstractClaim
     public function __construct(\Closure $closure)
     {
         $this
-            ->setAttr(ClaimDict::TYPE, ClaimDict::TYPE_CALLBACK)
-            ->setAttr(ClaimDict::TYPE_CALLBACK_CLOSURE, $closure)
+            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::CALLBACK)
+            ->setAttr(ClaimDict::CALLBACK_CLOSURE, $closure)
         ;
     }
 }
