@@ -1,14 +1,25 @@
-# rule
+# The rule
 ### Abstraction for data validation rules
-#### Usage
+#### The value verifier
 
 ```php
 use Takeoto\Rule\Builder\RuleBuilder;
-use Takeoto\Rule\Claim\RAWClaim;
-use Takeoto\Rule\Contract\ClaimInterface;
-use Takeoto\Rule\RAWRule;
 use Takeoto\Rule\Utility\Claim;
 use Takeoto\Rule\Verifier;
+
+$verifier = new Verifier(new RuleBuilder());
+$verifier->verify(Claim::int(), 1)->isOk(); # true
+$verifier->verify(Claim::string()->min(1)->max(5), 'ABCDE6')->isOk(); # false
+$verifier->verify(Claim::string()->min(1)->max(6), 'ABCDE6')->isOk(); # true
+```
+
+#### The rule builder
+
+```php
+use Takeoto\Rule\Builder\RuleBuilder;
+use Takeoto\Rule\Utility\Claim;
+
+# --- Rule builder
 
 $ruleBuilder = new RuleBuilder();
 # Building the rule by claim.
@@ -37,8 +48,15 @@ $state = $rule->verify([
     ],
 ]);
 $state->isOk(); # false
+```
 
-# --- The custom rule.
+#### Custom rules
+
+```php
+use Takeoto\Rule\Builder\RuleBuilder;
+use Takeoto\Rule\Claim\RAWClaim;
+use Takeoto\Rule\Contract\ClaimInterface;
+use Takeoto\Rule\RAWRule;
 
 $ruleBuilder = new RuleBuilder();
 # Registering a custom rule,
@@ -69,11 +87,4 @@ $rule = $ruleBuilder->build($claim);
 
 $rule->verify('Hello Mars!')->isOk(); # false
 $rule->verify('Hello Pikachu!')->isOk(); # true
-
-# -- The verifier
-
-$verifier = new Verifier(new RuleBuilder());
-$verifier->verify(Claim::int(), 1)->isOk(); # true
-$verifier->verify(Claim::string()->min(1)->max(5), 'ABCDE6')->isOk(); # false
-$verifier->verify(Claim::string()->min(1)->max(6), 'ABCDE6')->isOk(); # true
 ```

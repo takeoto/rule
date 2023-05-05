@@ -10,24 +10,24 @@ use Takeoto\Rule\Contract\RuleInterface;
 use Takeoto\State\Contract\StateInterface;
 use Takeoto\State\State;
 
-class RAWRule implements RuleInterface
+final class RAWRule implements RuleInterface
 {
-    private \Closure $verifier;
-
     /**
-     * @param \Closure(mixed $v):StateInterface|MessageInterface|array<string|MessageInterface>|string|bool $verifier
+     * @param \Closure(mixed $v):mixed $verifier
+     * @param string|int|null $defaultErrorCode
      */
-    public function __construct(\Closure $verifier)
+    public function __construct(private \Closure $verifier, private string|int|null $defaultErrorCode = null)
     {
-        $this->verifier = $verifier;
     }
 
     /**
-     * @param \Closure(mixed $v):StateInterface|MessageInterface|array<string|MessageInterface>|string|bool $verifier
+     * @param \Closure(mixed $v):mixed $verifier
+     * @param string|int|null $defaultErrorCode
+     * @return self
      */
-    public static function new(\Closure $verifier)
+    public static function new(\Closure $verifier, string|int|null $defaultErrorCode = null): self
     {
-        return new self($verifier);
+        return new self($verifier, $defaultErrorCode);
     }
 
     /**
@@ -47,21 +47,39 @@ class RAWRule implements RuleInterface
     /**
      * @param mixed $message
      * @return MessageInterface|null
+     * @throws \Throwable
      */
     private function toMessage(mixed $message): ?MessageInterface
     {
         switch (true) {
             case is_bool($message):
-                return $message ? new ErrorMessage(
-                    $this->verifier::class . '__verification_error',
-                    'Value is not verified.'
-                ) : null;
+                return $message ? null : new ErrorMessage($this->getDefaultErrorCode(), 'Value is not verified.');
             case is_string($message):
-                return new ErrorMessage($this->verifier::class . '__verification_error', $message);
+                return new ErrorMessage($this->getDefaultErrorCode(), $message);
             case $message instanceof MessageInterface:
                 return $message;
             default:
-                throw new \RuntimeException('The result of a verify closure cannot be transformed to the state.');
+                throw new \RuntimeException(sprintf(
+                    'The result of a "%s" verifier cannot be transformed to the state. Allowed types: %s',
+                    $this->getVerifierName(),
+                    implode(', ', [
+                        StateInterface::class,
+                        MessageInterface::class,
+                        'array<string|' . MessageInterface::class . '>',
+                        'bool',
+                        'string',
+                    ]),
+                ));
         }
+    }
+
+    public function getVerifierName(): string
+    {
+        return $this->verifier::class;
+    }
+
+    public function getDefaultErrorCode(): string
+    {
+        return $this->defaultErrorCode ??= $this->getVerifierName() . '__verification_error';
     }
 }

@@ -15,6 +15,9 @@ class Verifier implements VerifierInterface
     {
     }
 
+    /**
+     * @inheritDoc
+     */
     public function verify(mixed $value, ClaimInterface $claim): StateInterface
     {
         return $this->builder->build($claim)->verify($value);
