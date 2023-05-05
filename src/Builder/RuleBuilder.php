@@ -12,6 +12,7 @@ use Takeoto\Rule\Contract\RuleInterface;
 use Takeoto\Rule\Dictionary\ClaimDict;
 use Takeoto\Rule\Dictionary\ErrorDict;
 use Takeoto\Rule\RAWRule;
+use Takeoto\Rule\Utility\Claim;
 
 class RuleBuilder implements RuleBuilderInterface
 {
@@ -29,6 +30,7 @@ class RuleBuilder implements RuleBuilderInterface
             ClaimDict::ARRAY => $this->makeArrayRule($claim),
             ClaimDict::CALLBACK => $this->makeCallbackRule($claim),
             ClaimDict::ONE_OF => $this->makeOneOfRule($claim),
+            ClaimDict::COMPARE => $this->makeCompareRule($claim),
             ClaimDict::FLOAT,
             ClaimDict::BOOL,
             ClaimDict::CALLABLE,
@@ -72,9 +74,9 @@ class RuleBuilder implements RuleBuilderInterface
         $soft = $attrs[ClaimDict::INT_SOFT] ?? false;
         $errorsMassages = $attrs[ClaimDict::CLAIM_ERROR_MESSAGE] ?? [];
         $errorsMassages += [
-            ErrorDict::NOT_INT => 'Value should be an int, {{ type }} given.',
-            ErrorDict::NOT_INT_MORE_OR_EQ => 'Value should be more or equal then {{ min }}.',
-            ErrorDict::NOT_INT_LESS_OR_EQ => 'Value should be less or equal then {{ max }}.',
+            ErrorDict::NOT_INT => 'The value should be an int, {{ type }} given.',
+            ErrorDict::NOT_INT_MORE_OR_EQ => 'The value should be more or equal then {{ min }}.',
+            ErrorDict::NOT_INT_LESS_OR_EQ => 'The value should be less or equal then {{ max }}.',
         ];
 
         return RAWRule::new(
@@ -103,7 +105,7 @@ class RuleBuilder implements RuleBuilderInterface
         $pattern = $attrs[ClaimDict::STRING_PATTERN] ?? null;
         $errorsMassages = $attrs[ClaimDict::CLAIM_ERROR_MESSAGE] ?? [];
         $errorsMassages += [
-            ErrorDict::NOT_STRING => 'Value should be a string, {{ type }} given.',
+            ErrorDict::NOT_STRING => 'The value should be a string, {{ type }} given.',
             ErrorDict::NOT_STRING_LENGTH_MORE_OR_EQ => 'The length of the string should be ' .
                 'more or equal then {{ min }}.',
             ErrorDict::NOT_STRING_LENGTH_LESS_OR_EQ => 'The length of the string should be ' .
@@ -131,11 +133,67 @@ class RuleBuilder implements RuleBuilderInterface
 
     protected function makeCallbackRule(ClaimInterface $claim): RuleInterface
     {
+        return RAWRule::new($claim->getAttr(ClaimDict::CALLBACK_CLOSURE));
     }
 
     protected function makeArrayRule(ClaimInterface $claim): RuleInterface
     {
+        $attrs = $claim->getAttrs();
+        $allowMissing = $attrs[ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS] ?? false;
+        $allowExtra = $attrs[ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS] ?? false;
+        $reqFields = array_combine($reqFields = $attrs[ClaimDict::ARRAY_REQUIRED_FIELD] ?? [], $reqFields);
+        $optFields = array_combine($optFields = $attrs[ClaimDict::ARRAY_OPTIONAL_FIELD] ?? [], $optFields);
+        $structure = $attrs[ClaimDict::ARRAY_STRUCTURE] ?? [];
+        $eachRule = $attrs[ClaimDict::ARRAY_EACH] ?? null;
 
+        return RAWRule::new(function (mixed $value) use (
+            $allowExtra,
+            $allowMissing,
+            $reqFields,
+            $optFields,
+            $structure,
+            $eachRule,
+        ) {
+            if (!is_array($value)) {
+                return new ErrorMessage(
+                    ErrorDict::NOT_ARRAY,
+                    'The value should be an string, {{ type }} given.',
+                    ['{{ type }}' => gettype($value)],
+                );
+            }
+
+            $errors = [];
+
+            foreach ($structure as $key => $rule) {
+                $keyExist = array_key_exists($key, $value);
+
+                if (!$keyExist) {
+                    if (isset($reqFields[$key]) || (!$allowMissing && !isset($optFields[$key]))) {
+                        $errors[] = new ErrorMessage(
+                            ErrorDict::ARRAY_KEY_MISSING,
+                            'The key "{{ key }}" in the array is missing.',
+                            ['{{ key }}' => $key],
+                        );
+                    }
+                    continue;
+                }
+
+                if ($rule instanceof ClaimInterface) {
+                    $rule = $this->build($rule);
+                }
+
+                $rule = $rule instanceof RuleInterface ? $rule : $this->build(Claim::as($value[$key])->strict());
+                $state = $rule->verify($value[$key]);
+
+                if ($state->isOk()) {
+                    continue;
+                }
+
+                foreach ($state->getMessages() as $message) {
+
+                }
+            }
+        });
     }
 
     protected function makeObjectRule(ClaimInterface $claim): RuleInterface
@@ -144,8 +202,8 @@ class RuleBuilder implements RuleBuilderInterface
         $instanceOf = $attrs[ClaimDict::OBJECT_INSTANCE] ?? null;
         $errorsMassages = $attrs[ClaimDict::CLAIM_ERROR_MESSAGE] ?? [];
         $errorsMassages += [
-            ErrorDict::NOT_OBJECT => 'Value should be an string, {{ type }} given.',
-            ErrorDict::NOT_OBJECT_INSTANCE_OF => 'Value should be an string, {{ type }} given.',
+            ErrorDict::NOT_OBJECT => 'The value should be an string, {{ type }} given.',
+            ErrorDict::NOT_OBJECT_INSTANCE_OF => 'The value should be an string, {{ type }} given.',
         ];
 
         return RAWRule::new(
@@ -191,7 +249,7 @@ class RuleBuilder implements RuleBuilderInterface
         $errorsMassages = $claim->hasAttr(ClaimDict::CLAIM_ERROR_MESSAGE)
             ? $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE)
             : [];
-        $errorsMassages += [$errorCode => sprintf('Value should be %s, {{ type }} given.', $name)];
+        $errorsMassages += [$errorCode => sprintf('The value should be %s, {{ type }} given.', $name)];
 
         return RAWRule::new(
             static fn(mixed $v): bool|ErrorMessageInterface => $verifier($v) ?: new ErrorMessage(
@@ -200,5 +258,47 @@ class RuleBuilder implements RuleBuilderInterface
                 ['{{ type }}' => gettype($v)],
             ),
         );
+    }
+
+    private function makeCompareRule(ClaimInterface $claim): RuleInterface
+    {
+        $value = $claim->getAttr(ClaimDict::COMPARE_VALUE);
+        $strict = $claim->getAttr(ClaimDict::COMPARE_STRICT);
+        $message = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
+        $verifier = static fn(mixed $v): bool => $strict ? $value === $v : $value == $v;
+
+        return RAWRule::new(static fn(mixed $v) => $verifier($v) ?: new ErrorMessage(
+            ErrorDict::NOT_SAME,
+            'This value should be equal to {{ value }}.',
+            [
+                '{{ value }}' => $this->formatValue($v),
+            ],
+        ));
+    }
+
+    protected function formatValue(mixed $value, bool $detailed = false): string
+    {
+        switch (true) {
+            case \is_object($value):
+                return $detailed
+                    ? 'object@{' . ($value instanceof \Stringable ? (string)$value : serialize($value)) . '}'
+                    : 'object';
+            case \is_array($value):
+                return $detailed && array_walk($value, fn(&$v, $k) => $v = $k . ': ' . $this->formatValue($v, true))
+                    ? 'array@[' . implode(',', $value) . ']'
+                    : 'array';
+            case \is_string($value):
+                return '"' . $value . '"';
+            case \is_resource($value):
+                return 'resource';
+            case null === $value:
+                return 'null';
+            case false === $value:
+                return 'false';
+            case true === $value:
+                return 'true';
+            default:
+                return (string)$value;
+        }
     }
 }

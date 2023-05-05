@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Takeoto\Rule\Utility;
 
 use Takeoto\Rule\Claim\CallbackClaim;
+use Takeoto\Rule\Claim\CompareClaim;
 use Takeoto\Rule\Claim\OneOfClaim;
 use Takeoto\Rule\Claim\Type\ArrayClaim;
 use Takeoto\Rule\Claim\Type\IntClaim;
@@ -55,12 +56,17 @@ final class Claim
 
     public static function oneOf(mixed ...$values): OneOfClaim
     {
-        return (new OneOfClaim())->items($values);
+        return new OneOfClaim($values);
     }
 
     public static function callback(\Closure $closure): CallbackClaim
     {
         return new CallbackClaim($closure);
+    }
+
+    public static function as(mixed $value): CompareClaim
+    {
+        return new CompareClaim($value);
     }
 
     private function __construct()

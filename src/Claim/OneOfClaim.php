@@ -8,9 +8,13 @@ use Takeoto\Rule\Dictionary\ClaimDict;
 
 class OneOfClaim extends AbstractClaim
 {
-    public function __construct()
+    public function __construct(mixed ...$values)
     {
-        $this->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ONE_OF);
+        $this
+            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ONE_OF)
+            ->attrRule(ClaimDict::ONE_OF_ITEMS, \Closure::fromCallable('is_array'))
+            ->items($values)
+        ;
     }
 
     /**

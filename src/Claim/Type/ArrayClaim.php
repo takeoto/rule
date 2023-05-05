@@ -14,6 +14,8 @@ final class ArrayClaim extends AbstractClaim
     {
         $this
             ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ARRAY)
+            ->setAttr(ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS, false)
+            ->setAttr(ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS, false)
             ->attrRule(ClaimDict::ARRAY_STRUCTURE, \Closure::fromCallable('is_array'))
             ->attrRule(ClaimDict::ARRAY_OPTIONAL_FIELD, \Closure::fromCallable([$this, 'areKeysValid']))
             ->attrRule(ClaimDict::ARRAY_REQUIRED_FIELD, \Closure::fromCallable([$this, 'areKeysValid']));

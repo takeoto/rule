@@ -45,4 +45,8 @@ final class ClaimDict
     public const CALLABLE = 'claim.type.callable';
     public const RESOURCE = 'claim.type.resource';
     public const NULL = 'claim.type.null';
+
+    public const COMPARE = 'claim.type.same';
+    public const COMPARE_VALUE = 'claim.type.same.value';
+    public const COMPARE_STRICT = 'claim.type.same.strict';
 }

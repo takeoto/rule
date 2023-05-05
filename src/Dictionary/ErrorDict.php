@@ -6,6 +6,8 @@ namespace Takeoto\Rule\Dictionary;
 
 class ErrorDict
 {
+    public const NOT_SAME = 'rule.error.not-same';
+
     public const NOT_INT = 'rule.error.not-int';
     public const NOT_INT_LESS_OR_EQ = 'rule.error.int.less-or-eq';
     public const NOT_INT_MORE_OR_EQ = 'rule.error.int.more-or-eq';
@@ -22,6 +24,9 @@ class ErrorDict
     public const NOT_NULL = 'rule.error.not-null';
 
     public const NOT_ARRAY = 'rule.error.not-array';
+    public const ARRAY_KEY_MISSING = 'rule.error.array.key-missing';
+    public const ARRAY_KEY_EXTRA = 'rule.error.array.key-extra';
+
     public const NOT_FLOAT = 'rule.error.not-float';
     public const NOT_NUMERIC = 'rule.error.not-numeric';
     public const NOT_SCALAR = 'rule.error.not-scalar';
