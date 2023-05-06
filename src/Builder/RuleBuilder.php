@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Takeoto\Rule\Builder;
 
 use Takeoto\Message\Contract\ErrorMessageInterface;
+use Takeoto\Message\Contract\MessageInterface;
 use Takeoto\Message\ErrorMessage;
 use Takeoto\Message\Utility\MessageUtility;
 use Takeoto\Rule\Contract\ClaimInterface;
@@ -159,6 +160,15 @@ class RuleBuilder implements RuleBuilderInterface
 
             $messages = [];
 
+            if ($eachRule !== null) {
+                $rule = $this->makeRule($eachRule, 'This value of the key {{ key }} should be equal to {{ value }}.');
+                array_walk($array, fn(mixed $v, string|int $k) => array_push($messages,
+                    ...$this->verifyArrayValue($rule, $v, $k)
+                ));
+
+                return $messages;
+            }
+
             foreach ($structure as $key => $rule) {
                 $keyExist = array_key_exists($key, $array);
 
@@ -173,38 +183,11 @@ class RuleBuilder implements RuleBuilderInterface
                     continue;
                 }
 
-                if ($rule instanceof ClaimInterface) {
-                    $rule = $this->build($rule);
-                } elseif (!$rule instanceof RuleInterface) {
-                    $rule = $this->build(
-                        Claim::as($rule)
-                            ->strict()
-                            ->setErrorMessage(
-                                ErrorDict::NOT_SAME,
-                                'This value under the key {{ key }} should be equal to {{ value }}.'
-                            )
-                    );
-                }
-
-                $state = $rule->verify($array[$key]);
-
-                if ($state->isOk()) {
-                    continue;
-                }
-
-                foreach ($state->getMessages() as $message) {
-                    $variables = $message->getVariables();
-                    $keys = (array)($variables['{{ key }}'] ?? []);
-                    $messages[] = $message instanceof ErrorMessageInterface
-                        ? new ErrorMessage(
-                            $message->getCode(),
-                            $message->getTemplate(),
-                            ['{{ key }}' => count($keys) === 0 ? $key : [$key, ...$keys]] + $variables,
-                            static fn(mixed $v, string $k): string => $k === '{{ key }}' && is_array($v)
-                                ? array_reduce($v, static fn(string $c, mixed $v): string => $c . "[$v]", '')
-                                : MessageUtility::formatVar($v)
-                        ) : $message;
-                }
+                array_push($messages, ...$this->verifyArrayValue(
+                    $this->makeRule($rule, 'This value of the key {{ key }} should be equal to {{ value }}.'),
+                    $array[$key],
+                    $key,
+                ));
             }
 
             if ($allowExtra) {
@@ -247,7 +230,26 @@ class RuleBuilder implements RuleBuilderInterface
 
     protected function makeOneOfRule(ClaimInterface $claim): RuleInterface
     {
+        $items = $claim->getAttr(ClaimDict::ONE_OF_ITEMS);
+        $errorsMessages = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
 
+        return RAWRule::new(function(mixed $value) use ($items, $errorsMessages): bool|MessageInterface {
+            $errors = [];
+
+            foreach ($items as $item) {
+                $state = $this->makeRule($item)->verify($value);
+
+                if ($state->isOk()) {
+                    return true;
+                }
+
+                array_push($errors, ...$state->getMessages());
+            }
+
+            return new ErrorMessage(ErrorDict::NOT_ONE_OF, $errorsMessages[ErrorDict::NOT_ONE_OF], [
+                '{{ errors }}' => implode(', ', array_map('strval', $errors)),
+            ]);
+        });
     }
 
     protected function makeTypeRule(ClaimInterface $claim): RuleInterface
@@ -299,5 +301,80 @@ class RuleBuilder implements RuleBuilderInterface
                 '{{ value }}' => $value,
             ],
         ));
+    }
+
+    /**
+     * @param array<string|int, mixed> $variables
+     * @param string $placeholder
+     * @param mixed $value
+     * @return array<string|int, mixed>
+     */
+    private function addVariableToMessage(array $variables, string $placeholder, mixed $value): array
+    {
+        if (array_key_exists($placeholder, $variables)) {
+            $value = [
+                $value,
+                ...is_array($variables[$placeholder])
+                    ? $variables[$placeholder]
+                    : [$variables[$placeholder]]
+            ];
+        }
+
+        $variables[$placeholder] = $value;
+
+        return $variables;
+    }
+
+    /**
+     * @param RuleInterface $rule
+     * @param mixed $value
+     * @param string|int $key
+     * @return MessageInterface[]
+     */
+    private function verifyArrayValue(RuleInterface $rule, mixed $value, string|int $key): array
+    {
+        $state = $rule->verify($value);
+        $messages = [];
+
+        if ($state->isOk()) {
+            return $messages;
+        }
+
+
+        foreach ($state->getMessages() as $message) {
+            $messages[] = $message instanceof ErrorMessageInterface
+                ? new ErrorMessage(
+                    $message->getCode(),
+                    $message->getTemplate(),
+                    $this->addVariableToMessage($message->getVariables(), '{{ key }}', $key),
+                    static fn(mixed $v, string $k): string => $k === '{{ key }}' && is_array($v)
+                        ? array_reduce($v, static fn(string $c, mixed $v): string => $c . "[$v]", '')
+                        : MessageUtility::formatVar($v)
+                ) : $message;
+        }
+
+        return $messages;
+    }
+
+    /**
+     * @param mixed $rule
+     * @param string|null $asErrorMessage
+     * @return RuleInterface
+     */
+    private function makeRule(mixed $rule, string $asErrorMessage = null): RuleInterface
+    {
+        if ($rule instanceof ClaimInterface) {
+            $rule = $this->build($rule);
+        } elseif (!$rule instanceof RuleInterface) {
+            $compareClaim = Claim::as($rule)->strict();
+
+            if ($asErrorMessage !== null) {
+                $compareClaim->setErrorMessage(ErrorDict::NOT_SAME, $asErrorMessage);
+            }
+
+            $rule = $this->build($compareClaim);
+        }
+
+        return $rule;
     }
 }

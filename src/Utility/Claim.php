@@ -56,7 +56,7 @@ final class Claim
 
     public static function oneOf(mixed ...$values): OneOfClaim
     {
-        return new OneOfClaim($values);
+        return new OneOfClaim(...$values);
     }
 
     public static function callback(\Closure $closure): CallbackClaim
