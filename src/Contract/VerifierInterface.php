@@ -14,6 +14,7 @@ interface VerifierInterface
      * @param mixed $value
      * @param ClaimInterface $claim
      * @return StateInterface
+     * @throws \Throwable
      */
     public function verify(mixed $value, ClaimInterface $claim): StateInterface;
 }

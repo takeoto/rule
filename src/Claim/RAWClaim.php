@@ -9,10 +9,10 @@ use Takeoto\Rule\Dictionary\ClaimDict;
 final class RAWClaim extends AbstractClaim
 {
     /**
-     * @param string $type
+     * @param string|null $type
      * @param mixed[] $attributes
      */
-    public function __construct(string $type, array $attributes)
+    public function __construct(string $type = null, array $attributes)
     {
         array_walk($attributes, fn(mixed $v, string|int $k) => $this->setAttr((string)$k, $v));
         $this->setAttr(ClaimDict::CLAIM_TYPE, $type);

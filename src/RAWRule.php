@@ -40,8 +40,11 @@ final class RAWRule implements RuleInterface
         if ($state instanceof StateInterface) {
             return $state;
         }
-
-        return new State(is_array($state) ? array_map([$this, 'toMessage'], $state) : (array)$this->toMessage($state));
+        return new State(array_reduce(
+            is_array($state) ? $state : [$state],
+            fn(array $ers, mixed $msg) => (null === $msg = $this->toMessage($msg)) ? $ers : [...$ers, $msg],
+            [],
+        ));
     }
 
     /**

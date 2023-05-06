@@ -12,7 +12,7 @@ class TypeClaim extends AbstractClaim
     public function __construct(string $type)
     {
         $this
-            ->setAttr(ClaimDict::CLAIM_TYPE, $type)
+            ->setType($type)
             ->attrRule(ClaimDict::CLAIM_TYPE, \Closure::fromCallable('is_string'));
     }
 

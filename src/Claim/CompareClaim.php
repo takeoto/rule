@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace Takeoto\Rule\Claim;
 
 use Takeoto\Rule\Dictionary\ClaimDict;
+use Takeoto\Rule\Dictionary\ErrorDict;
 
 class CompareClaim extends AbstractClaim
 {
     public function __construct(mixed $value)
     {
         $this
-            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::COMPARE)
+            ->setType(ClaimDict::COMPARE)
+            ->setErrorMessage(ErrorDict::NOT_SAME, 'This value should be equal to {{ value }}.')
             ->value($value)
             ->strict(false)
         ;

@@ -68,9 +68,11 @@ $ruleBuilder->register(
      RAWRule::new(fn(mixed $v) => is_string($v) && str_contains($v, 'pikachu') ?: 'The word "Pikachu" not found!')
  );
 # Creating the rule claim.
-$claim = new RAWClaim('hasWordPikachu');
+$claim = new RAWClaim([
+    ClaimDict::CLAIM_TYPE => ,
+]);
 # Building rule by the claim
-$rule = $ruleBuilder->build($claim);
+$rule = $ruleBuilder->build('hasWordPikachu');
 
 $rule->verify('Hello Mars!')->isOk(); # false
 $rule->verify('Hello Pikachu!')->isOk(); # true
@@ -90,4 +92,25 @@ $rule = $ruleBuilder->build($claim);
 
 $rule->verify('Hello Mars!')->isOk(); # false
 $rule->verify('Hello Pikachu!')->isOk(); # true
+
+
+# type
+# rule
+# has key {{ key }}
+
+$type = Type::mixed()
+    ->int()->error('Should be INT')
+    ->bool()->error('Should be INT')
+    ->object()
+    ->array([
+        'key' => Type::int(),
+        'qwee' => Type::int(),
+    ]);
+    
+Type::make()->verify();
+
+$type->schema();
+    
+$type->verify('qweqwe')->explain();
+
 ```

@@ -11,8 +11,7 @@ class OneOfClaim extends AbstractClaim
     public function __construct(mixed ...$values)
     {
         $this
-            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ONE_OF)
-            ->attrRule(ClaimDict::ONE_OF_ITEMS, \Closure::fromCallable('is_array'))
+            ->setType(ClaimDict::ONE_OF)
             ->items($values)
         ;
     }

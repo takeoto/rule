@@ -5,14 +5,25 @@
     "keywords": ["takeoto", "validation", "rule", "abstraction", "php"],
     "license": "MIT",
     "homepage": "https://github.com/takeoto",
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Vladysalv Vernyhora",
-            "homepage": "vladyslav.vernyhora@gmail.com"
+            "email": "vladyslav.vernyhora@gmail.com",
+            "homepage": "https://github.com/takeoto"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../message"
         }
     ],
     "require": {
-        "php": ">=8.0"
+        "php": ">=8.0",
+        "takeoto/message": "dev-main",
+        "takeoto/attributable": "dev-main",
+        "takeoto/state": "dev-main"
     },
     "autoload": {
         "psr-4": {

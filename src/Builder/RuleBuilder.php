@@ -6,6 +6,7 @@ namespace Takeoto\Rule\Builder;
 
 use Takeoto\Message\Contract\ErrorMessageInterface;
 use Takeoto\Message\ErrorMessage;
+use Takeoto\Message\Utility\MessageUtility;
 use Takeoto\Rule\Contract\ClaimInterface;
 use Takeoto\Rule\Contract\RuleBuilderInterface;
 use Takeoto\Rule\Contract\RuleInterface;
@@ -68,65 +69,59 @@ class RuleBuilder implements RuleBuilderInterface
 
     protected function makeIntRule(ClaimInterface $claim): RuleInterface
     {
-        $attrs = $claim->getAttrs();
-        $max = $attrs[ClaimDict::INT_MAX] ?? null;
-        $min = $attrs[ClaimDict::INT_MIN] ?? null;
-        $soft = $attrs[ClaimDict::INT_SOFT] ?? false;
-        $errorsMassages = $attrs[ClaimDict::CLAIM_ERROR_MESSAGE] ?? [];
-        $errorsMassages += [
-            ErrorDict::NOT_INT => 'The value should be an int, {{ type }} given.',
-            ErrorDict::NOT_INT_MORE_OR_EQ => 'The value should be more or equal then {{ min }}.',
-            ErrorDict::NOT_INT_LESS_OR_EQ => 'The value should be less or equal then {{ max }}.',
-        ];
+        $max = $claim->getAttr(ClaimDict::INT_MAX);
+        $min = $claim->getAttr(ClaimDict::INT_MIN);
+        $soft = $claim->getAttr(ClaimDict::INT_SOFT);
+        $errorsMassages = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
 
         return RAWRule::new(
             static function (mixed $v) use ($max, $min, $soft, $errorsMassages): bool|ErrorMessageInterface {
                 $errorCode = match (false) {
                     is_int($v) || ($soft && filter_var($v, FILTER_VALIDATE_INT)) => ErrorDict::NOT_INT,
-                    $v >= $min => ErrorDict::NOT_INT_MORE_OR_EQ,
-                    $v <= $max => ErrorDict::NOT_INT_LESS_OR_EQ,
+                    $min === null || $v >= $min => ErrorDict::NOT_INT_MORE_OR_EQ,
+                    $max === null || $v <= $max => ErrorDict::NOT_INT_LESS_OR_EQ,
                     default => null,
                 };
 
-                return null === $errorCode ?: new ErrorMessage($errorCode, $errorsMassages[$errorCode], [
-                    '{{ type }}' => gettype($v),
-                    '{{ min }}' => $min,
-                    '{{ max }}' => $max,
-                ]);
+                return null === $errorCode ?: new ErrorMessage(
+                    $errorCode,
+                    $errorsMassages[$errorCode] ?? 'Value is not valid.',
+                    [
+                        '{{ type }}' => gettype($v),
+                        '{{ min }}' => $min,
+                        '{{ max }}' => $max,
+                    ],
+                );
             },
         );
     }
 
     protected function makeStringRule(ClaimInterface $claim): RuleInterface
     {
-        $attrs = $claim->getAttrs();
-        $max = $attrs[ClaimDict::STRING_LENGTH_MAX] ?? null;
-        $min = $attrs[ClaimDict::STRING_LENGTH_MIN] ?? null;
-        $pattern = $attrs[ClaimDict::STRING_PATTERN] ?? null;
-        $errorsMassages = $attrs[ClaimDict::CLAIM_ERROR_MESSAGE] ?? [];
-        $errorsMassages += [
-            ErrorDict::NOT_STRING => 'The value should be a string, {{ type }} given.',
-            ErrorDict::NOT_STRING_LENGTH_MORE_OR_EQ => 'The length of the string should be ' .
-                'more or equal then {{ min }}.',
-            ErrorDict::NOT_STRING_LENGTH_LESS_OR_EQ => 'The length of the string should be ' .
-                'less or equal then {{ max }}.',
-        ];
+        $max = $claim->getAttr(ClaimDict::STRING_LENGTH_MAX);
+        $min = $claim->getAttr(ClaimDict::STRING_LENGTH_MIN);
+        $pattern = $claim->getAttr(ClaimDict::STRING_PATTERN);
+        $errorsMassages = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
 
         return RAWRule::new(
             static function (mixed $v) use ($max, $min, $pattern, $errorsMassages): bool|ErrorMessageInterface {
                 $errorCode = match (false) {
                     is_string($v) => ErrorDict::NOT_STRING,
                     null === $pattern || preg_match($pattern, $v) => ErrorDict::NOT_STRING_REGEX,
-                    mb_strlen($v) >= $min => ErrorDict::NOT_STRING_LENGTH_MORE_OR_EQ,
-                    mb_strlen($v) <= $max => ErrorDict::NOT_STRING_LENGTH_LESS_OR_EQ,
+                    $min === null || mb_strlen($v) >= $min => ErrorDict::NOT_STRING_LENGTH_MORE_OR_EQ,
+                    $max === null || mb_strlen($v) <= $max => ErrorDict::NOT_STRING_LENGTH_LESS_OR_EQ,
                     default => null,
                 };
 
-                return null === $errorCode ?: new ErrorMessage($errorCode, $errorsMassages[$errorCode], [
-                    '{{ type }}' => gettype($v),
-                    '{{ min }}' => $min,
-                    '{{ max }}' => $max,
-                ]);
+                return null === $errorCode ?: new ErrorMessage(
+                    $errorCode,
+                    $errorsMassages[$errorCode] ?? 'The value is not valid.',
+                    [
+                        '{{ type }}' => gettype($v),
+                        '{{ min }}' => $min,
+                        '{{ max }}' => $max,
+                    ],
+                );
             },
         );
     }
@@ -139,14 +134,14 @@ class RuleBuilder implements RuleBuilderInterface
     protected function makeArrayRule(ClaimInterface $claim): RuleInterface
     {
         $attrs = $claim->getAttrs();
-        $allowMissing = $attrs[ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS] ?? false;
-        $allowExtra = $attrs[ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS] ?? false;
+        $allowMissing = $attrs[ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS] ?? false;
+        $allowExtra = $attrs[ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS] ?? false;
         $reqFields = array_combine($reqFields = $attrs[ClaimDict::ARRAY_REQUIRED_FIELD] ?? [], $reqFields);
         $optFields = array_combine($optFields = $attrs[ClaimDict::ARRAY_OPTIONAL_FIELD] ?? [], $optFields);
         $structure = $attrs[ClaimDict::ARRAY_STRUCTURE] ?? [];
         $eachRule = $attrs[ClaimDict::ARRAY_EACH] ?? null;
 
-        return RAWRule::new(function (mixed $value) use (
+        return RAWRule::new(function (mixed $array) use (
             $allowExtra,
             $allowMissing,
             $reqFields,
@@ -154,24 +149,24 @@ class RuleBuilder implements RuleBuilderInterface
             $structure,
             $eachRule,
         ) {
-            if (!is_array($value)) {
+            if (!is_array($array)) {
                 return new ErrorMessage(
                     ErrorDict::NOT_ARRAY,
                     'The value should be an string, {{ type }} given.',
-                    ['{{ type }}' => gettype($value)],
+                    ['{{ type }}' => gettype($array)],
                 );
             }
 
-            $errors = [];
+            $messages = [];
 
             foreach ($structure as $key => $rule) {
-                $keyExist = array_key_exists($key, $value);
+                $keyExist = array_key_exists($key, $array);
 
                 if (!$keyExist) {
                     if (isset($reqFields[$key]) || (!$allowMissing && !isset($optFields[$key]))) {
-                        $errors[] = new ErrorMessage(
+                        $messages[] = new ErrorMessage(
                             ErrorDict::ARRAY_KEY_MISSING,
-                            'The key "{{ key }}" in the array is missing.',
+                            'The key {{ key }} in the array is missing.',
                             ['{{ key }}' => $key],
                         );
                     }
@@ -180,42 +175,71 @@ class RuleBuilder implements RuleBuilderInterface
 
                 if ($rule instanceof ClaimInterface) {
                     $rule = $this->build($rule);
+                } elseif (!$rule instanceof RuleInterface) {
+                    $rule = $this->build(
+                        Claim::as($rule)
+                            ->strict()
+                            ->setErrorMessage(
+                                ErrorDict::NOT_SAME,
+                                'This value under the key {{ key }} should be equal to {{ value }}.'
+                            )
+                    );
                 }
 
-                $rule = $rule instanceof RuleInterface ? $rule : $this->build(Claim::as($value[$key])->strict());
-                $state = $rule->verify($value[$key]);
+                $state = $rule->verify($array[$key]);
 
                 if ($state->isOk()) {
                     continue;
                 }
 
                 foreach ($state->getMessages() as $message) {
-
+                    $variables = $message->getVariables();
+                    $keys = (array)($variables['{{ key }}'] ?? []);
+                    $messages[] = $message instanceof ErrorMessageInterface
+                        ? new ErrorMessage(
+                            $message->getCode(),
+                            $message->getTemplate(),
+                            ['{{ key }}' => count($keys) === 0 ? $key : [$key, ...$keys]] + $variables,
+                            static fn(mixed $v, string $k): string => $k === '{{ key }}' && is_array($v)
+                                ? array_reduce($v, static fn(string $c, mixed $v): string => $c . "[$v]", '')
+                                : MessageUtility::formatVar($v)
+                        ) : $message;
                 }
             }
+
+            if ($allowExtra) {
+                return $messages;
+            }
+
+            foreach ($array as $key => $v) {
+                if (!array_key_exists($key, $structure)) {
+                    $messages[] = new ErrorMessage(
+                        ErrorDict::ARRAY_KEY_EXTRA,
+                        'The key {{ key }} of the array was not expected.',
+                        ['{{ key }}' => $key]
+                    );
+                }
+            }
+
+            return $messages;
         });
     }
 
     protected function makeObjectRule(ClaimInterface $claim): RuleInterface
     {
-        $attrs = $claim->getAttrs();
-        $instanceOf = $attrs[ClaimDict::OBJECT_INSTANCE] ?? null;
-        $errorsMassages = $attrs[ClaimDict::CLAIM_ERROR_MESSAGE] ?? [];
-        $errorsMassages += [
-            ErrorDict::NOT_OBJECT => 'The value should be an string, {{ type }} given.',
-            ErrorDict::NOT_OBJECT_INSTANCE_OF => 'The value should be an string, {{ type }} given.',
-        ];
+        $instanceOf = $claim->getAttr(ClaimDict::OBJECT_INSTANCE);
+        $errorsMassages = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
 
         return RAWRule::new(
-            static function (mixed $v) use ($instanceOf, $errorsMassages): bool|ErrorMessageInterface {
+            static function (mixed $value) use ($instanceOf, $errorsMassages): bool|ErrorMessageInterface {
                 $errorCode = match (false) {
-                    is_object($v) => ErrorDict::NOT_OBJECT,
-                    null === $instanceOf || $v instanceof $instanceOf => ErrorDict::NOT_OBJECT_INSTANCE_OF,
+                    is_object($value) => ErrorDict::NOT_OBJECT,
+                    null === $instanceOf || $value instanceof $instanceOf => ErrorDict::NOT_OBJECT_INSTANCE_OF,
                     default => null,
                 };
 
                 return null === $errorCode ?: new ErrorMessage($errorCode, $errorsMassages[$errorCode], [
-                    '{{ type }}' => gettype($v),
+                    '{{ type }}' => gettype($value),
                 ]);
             },
         );
@@ -223,6 +247,7 @@ class RuleBuilder implements RuleBuilderInterface
 
     protected function makeOneOfRule(ClaimInterface $claim): RuleInterface
     {
+
     }
 
     protected function makeTypeRule(ClaimInterface $claim): RuleInterface
@@ -264,41 +289,15 @@ class RuleBuilder implements RuleBuilderInterface
     {
         $value = $claim->getAttr(ClaimDict::COMPARE_VALUE);
         $strict = $claim->getAttr(ClaimDict::COMPARE_STRICT);
-        $message = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
+        $messages = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
         $verifier = static fn(mixed $v): bool => $strict ? $value === $v : $value == $v;
 
         return RAWRule::new(static fn(mixed $v) => $verifier($v) ?: new ErrorMessage(
             ErrorDict::NOT_SAME,
-            'This value should be equal to {{ value }}.',
+            $messages[ErrorDict::NOT_SAME],
             [
-                '{{ value }}' => $this->formatValue($v),
+                '{{ value }}' => $value,
             ],
         ));
-    }
-
-    protected function formatValue(mixed $value, bool $detailed = false): string
-    {
-        switch (true) {
-            case \is_object($value):
-                return $detailed
-                    ? 'object@{' . ($value instanceof \Stringable ? (string)$value : serialize($value)) . '}'
-                    : 'object';
-            case \is_array($value):
-                return $detailed && array_walk($value, fn(&$v, $k) => $v = $k . ': ' . $this->formatValue($v, true))
-                    ? 'array@[' . implode(',', $value) . ']'
-                    : 'array';
-            case \is_string($value):
-                return '"' . $value . '"';
-            case \is_resource($value):
-                return 'resource';
-            case null === $value:
-                return 'null';
-            case false === $value:
-                return 'false';
-            case true === $value:
-                return 'true';
-            default:
-                return (string)$value;
-        }
     }
 }

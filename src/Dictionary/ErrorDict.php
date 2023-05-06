@@ -21,12 +21,12 @@ class ErrorDict
 
     public const NOT_OBJECT = 'rule.error.not-object';
     public const NOT_OBJECT_INSTANCE_OF = 'rule.error.object.not-instanceOf';
-    public const NOT_NULL = 'rule.error.not-null';
 
     public const NOT_ARRAY = 'rule.error.not-array';
     public const ARRAY_KEY_MISSING = 'rule.error.array.key-missing';
     public const ARRAY_KEY_EXTRA = 'rule.error.array.key-extra';
 
+    public const NOT_NULL = 'rule.error.not-null';
     public const NOT_FLOAT = 'rule.error.not-float';
     public const NOT_NUMERIC = 'rule.error.not-numeric';
     public const NOT_SCALAR = 'rule.error.not-scalar';

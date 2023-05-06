@@ -12,7 +12,7 @@ abstract class AbstractClaim implements ClaimInterface
     /**
      * @var array<string,mixed>
      */
-    protected array $attributes;
+    protected array $attributes = [];
 
     /**
      * @var array<string,\Closure>
@@ -27,10 +27,17 @@ abstract class AbstractClaim implements ClaimInterface
         return (string)$this->getAttr(ClaimDict::CLAIM_TYPE);
     }
 
+    protected function setType(string $type): static
+    {
+        $this->setAttr(ClaimDict::CLAIM_TYPE, $type);
+
+        return $this;
+    }
+
     public function getAttr(string $name): mixed
     {
-        if (!isset($this->attributes[$name])) {
-            throw new \Exception(sprintf('Attribute "%" does not exists!', $name));
+        if (!$this->hasAttr($name)) {
+            throw new \Exception(sprintf('Attribute "%s" does not exists!', $name));
         }
 
         return $this->attributes[$name];
@@ -38,7 +45,7 @@ abstract class AbstractClaim implements ClaimInterface
 
     public function hasAttr(string $name): bool
     {
-        return isset($this->attributes[$name]);
+        return array_key_exists($name, $this->attributes);
     }
 
     public function getAttrs(): array
