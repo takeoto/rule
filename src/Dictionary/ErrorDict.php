@@ -6,7 +6,6 @@ namespace Takeoto\Rule\Dictionary;
 
 class ErrorDict
 {
-
     public const NOT_SAME = 'rule.error.not-same';
     public const NOT_ONE_OF = 'rule.error.not-one-of';
 

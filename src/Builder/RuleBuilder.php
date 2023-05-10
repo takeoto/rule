@@ -15,6 +15,7 @@ use Takeoto\Rule\Dictionary\ClaimDict;
 use Takeoto\Rule\Dictionary\ErrorDict;
 use Takeoto\Rule\RAWRule;
 use Takeoto\Rule\Utility\Claim;
+use Takeoto\Type\Type;
 
 class RuleBuilder implements RuleBuilderInterface
 {
@@ -134,13 +135,13 @@ class RuleBuilder implements RuleBuilderInterface
 
     protected function makeArrayRule(ClaimInterface $claim): RuleInterface
     {
-        $attrs = $claim->getAttrs();
-        $allowMissing = $attrs[ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS] ?? false;
-        $allowExtra = $attrs[ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS] ?? false;
-        $reqFields = array_combine($reqFields = $attrs[ClaimDict::ARRAY_REQUIRED_FIELD] ?? [], $reqFields);
-        $optFields = array_combine($optFields = $attrs[ClaimDict::ARRAY_OPTIONAL_FIELD] ?? [], $optFields);
-        $structure = $attrs[ClaimDict::ARRAY_STRUCTURE] ?? [];
-        $eachRule = $attrs[ClaimDict::ARRAY_EACH] ?? null;
+        $allowMissing = Type::bool($claim->getAttr(ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS));
+        $allowExtra = Type::bool($claim->getAttr(ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS));
+        $reqFields = array_flip(Type::array($claim->getAttr(ClaimDict::ARRAY_REQUIRED_FIELD)));
+        $optFields = array_flip(Type::array($claim->getAttr(ClaimDict::ARRAY_OPTIONAL_FIELD)));
+        $structure = Type::array($claim->getAttr(ClaimDict::ARRAY_STRUCTURE));
+        $eachRule = $claim->getAttr(ClaimDict::ARRAY_EACH);
+        $errorsMessagesX = Type::arrayX($claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE));
 
         return RAWRule::new(function (mixed $array) use (
             $allowExtra,
@@ -149,11 +150,12 @@ class RuleBuilder implements RuleBuilderInterface
             $optFields,
             $structure,
             $eachRule,
+            $errorsMessagesX,
         ) {
             if (!is_array($array)) {
                 return new ErrorMessage(
                     ErrorDict::NOT_ARRAY,
-                    'The value should be an string, {{ type }} given.',
+                    $errorsMessagesX[ErrorDict::NOT_ARRAY]->string(),
                     ['{{ type }}' => gettype($array)],
                 );
             }
@@ -176,7 +178,7 @@ class RuleBuilder implements RuleBuilderInterface
                     if (isset($reqFields[$key]) || (!$allowMissing && !isset($optFields[$key]))) {
                         $messages[] = new ErrorMessage(
                             ErrorDict::ARRAY_KEY_MISSING,
-                            'The key {{ key }} in the array is missing.',
+                            $errorsMessagesX[ErrorDict::ARRAY_KEY_MISSING]->string(),
                             ['{{ key }}' => $key],
                         );
                     }
@@ -198,7 +200,7 @@ class RuleBuilder implements RuleBuilderInterface
                 if (!array_key_exists($key, $structure)) {
                     $messages[] = new ErrorMessage(
                         ErrorDict::ARRAY_KEY_EXTRA,
-                        'The key {{ key }} of the array was not expected.',
+                        $errorsMessagesX[ErrorDict::ARRAY_KEY_EXTRA]->string(),
                         ['{{ key }}' => $key]
                     );
                 }

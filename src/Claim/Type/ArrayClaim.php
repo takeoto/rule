@@ -7,16 +7,23 @@ namespace Takeoto\Rule\Claim\Type;
 use Takeoto\Rule\Contract\ClaimInterface;
 use Takeoto\Rule\Claim\AbstractClaim;
 use Takeoto\Rule\Dictionary\ClaimDict;
+use Takeoto\Rule\Dictionary\ErrorDict;
 
 final class ArrayClaim extends AbstractClaim
 {
     public function __construct()
     {
         $this
-            ->setAttr(ClaimDict::CLAIM_TYPE, ClaimDict::ARRAY)
-            ->setAttr(ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS, false)
-            ->setAttr(ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS, false)
-            ->attrRule(ClaimDict::ARRAY_STRUCTURE, \Closure::fromCallable('is_array'))
+            ->setType(ClaimDict::ARRAY)
+            ->structure(null)
+            ->extraFields(false)
+            ->missingFields(false)
+            ->each(null)
+            ->required([])
+            ->optional([])
+            ->setErrorMessage(ErrorDict::NOT_ARRAY, 'The value should be an string, {{ type }} given.')
+            ->setErrorMessage(ErrorDict::ARRAY_KEY_MISSING, 'The key {{ key }} in the array is missing.')
+            ->setErrorMessage(ErrorDict::ARRAY_KEY_EXTRA, 'The key {{ key }} of the array was not expected.')
             ->attrRule(ClaimDict::ARRAY_OPTIONAL_FIELD, \Closure::fromCallable([$this, 'areKeysValid']))
             ->attrRule(ClaimDict::ARRAY_REQUIRED_FIELD, \Closure::fromCallable([$this, 'areKeysValid']));
     }
@@ -25,7 +32,7 @@ final class ArrayClaim extends AbstractClaim
      * @param array<string,ClaimInterface>|null $structure
      * @return $this
      */
-    public function structure(?array $structure = null): self
+    public function structure(?array $structure): self
     {
         null === $structure
             ? $this->unsetAttr(ClaimDict::ARRAY_STRUCTURE)
@@ -48,7 +55,7 @@ final class ArrayClaim extends AbstractClaim
         return $this;
     }
 
-    public function each(ClaimInterface $demand): self
+    public function each(?ClaimInterface $demand): self
     {
         $this->setAttr(ClaimDict::ARRAY_EACH, $demand);
 

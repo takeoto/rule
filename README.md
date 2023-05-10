@@ -10,10 +10,10 @@ use Takeoto\Rule\Verifier;
 $verifier = new Verifier(new RuleBuilder());
 $verifier->verify(Claim::int(), 1)->isOk(); # true
 
-$verifier->verify(Claim::string()->min(1)->max(5), 'ABCDE6')->isOk(); # false
-$verifier->verify(Claim::string()->min(1)->max(5), 'ABCDE6')->getMessages()->getErrors()->first();
+$verifier->verify('ABCDE6', Claim::string()->min(1)->max(5))->isOk(); # false
+$verifier->verify('ABCDE6', Claim::string()->min(1)->max(5))->getMessages()->getErrors()->first();
 
-$verifier->verify(Claim::string()->min(1)->max(6), 'ABCDE6')->isOk(); # true
+$verifier->verify('ABCDE6', Claim::string()->min(1)->max(6))->isOk(); # true
 ```
 
 #### The rule builder
@@ -92,25 +92,5 @@ $rule = $ruleBuilder->build($claim);
 
 $rule->verify('Hello Mars!')->isOk(); # false
 $rule->verify('Hello Pikachu!')->isOk(); # true
-
-
-# type
-# rule
-# has key {{ key }}
-
-$type = Type::mixed()
-    ->int()->error('Should be INT')
-    ->bool()->error('Should be INT')
-    ->object()
-    ->array([
-        'key' => Type::int(),
-        'qwee' => Type::int(),
-    ]);
-    
-Type::make()->verify();
-
-$type->schema();
-    
-$type->verify('qweqwe')->explain();
 
 ```
