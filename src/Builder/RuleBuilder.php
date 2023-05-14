@@ -135,13 +135,13 @@ class RuleBuilder implements RuleBuilderInterface
 
     protected function makeArrayRule(ClaimInterface $claim): RuleInterface
     {
-        $allowMissing = Type::bool($claim->getAttr(ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS));
-        $allowExtra = Type::bool($claim->getAttr(ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS));
-        $reqFields = array_flip(Type::array($claim->getAttr(ClaimDict::ARRAY_REQUIRED_FIELD)));
-        $optFields = array_flip(Type::array($claim->getAttr(ClaimDict::ARRAY_OPTIONAL_FIELD)));
-        $structure = Type::array($claim->getAttr(ClaimDict::ARRAY_STRUCTURE));
+        $allowMissing = $claim->getAttr(ClaimDict::ARRAY_ALLOWED_MISSING_FIELDS);
+        $allowExtra = $claim->getAttr(ClaimDict::ARRAY_ALLOWED_EXTRA_FIELDS);
+        $reqFields = array_flip($claim->getAttr(ClaimDict::ARRAY_REQUIRED_FIELD));
+        $optFields = array_flip($claim->getAttr(ClaimDict::ARRAY_OPTIONAL_FIELD));
+        $structure = $claim->getAttr(ClaimDict::ARRAY_STRUCTURE);
         $eachRule = $claim->getAttr(ClaimDict::ARRAY_EACH);
-        $errorsMessagesX = Type::arrayX($claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE));
+        $errorsMessages = $claim->getAttr(ClaimDict::CLAIM_ERROR_MESSAGE);
 
         return RAWRule::new(function (mixed $array) use (
             $allowExtra,
@@ -150,12 +150,12 @@ class RuleBuilder implements RuleBuilderInterface
             $optFields,
             $structure,
             $eachRule,
-            $errorsMessagesX,
+            $errorsMessages,
         ) {
             if (!is_array($array)) {
                 return new ErrorMessage(
                     ErrorDict::NOT_ARRAY,
-                    $errorsMessagesX[ErrorDict::NOT_ARRAY]->string(),
+                    $errorsMessages[ErrorDict::NOT_ARRAY],
                     ['{{ type }}' => gettype($array)],
                 );
             }
@@ -178,7 +178,7 @@ class RuleBuilder implements RuleBuilderInterface
                     if (isset($reqFields[$key]) || (!$allowMissing && !isset($optFields[$key]))) {
                         $messages[] = new ErrorMessage(
                             ErrorDict::ARRAY_KEY_MISSING,
-                            $errorsMessagesX[ErrorDict::ARRAY_KEY_MISSING]->string(),
+                            $errorsMessages[ErrorDict::ARRAY_KEY_MISSING],
                             ['{{ key }}' => $key],
                         );
                     }
@@ -200,7 +200,7 @@ class RuleBuilder implements RuleBuilderInterface
                 if (!array_key_exists($key, $structure)) {
                     $messages[] = new ErrorMessage(
                         ErrorDict::ARRAY_KEY_EXTRA,
-                        $errorsMessagesX[ErrorDict::ARRAY_KEY_EXTRA]->string(),
+                        $errorsMessages[ErrorDict::ARRAY_KEY_EXTRA],
                         ['{{ key }}' => $key]
                     );
                 }
